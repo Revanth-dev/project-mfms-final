@@ -1,0 +1,33 @@
+image: docker:24
+
+pipelines:
+  default:
+    - step:
+        name: Build and Scan Images
+        services:
+          - docker
+        script:
+          # Log in to Docker Hub if necessary
+          - echo Revanth@2001 | docker login -u revanth009 --password-stdin
+
+          # Build Docker images
+          - docker-compose build
+
+          # Run Trivy scans
+          - ./trivy-scan.sh
+
+          # Start containers for testing
+          - docker-compose up -d
+
+          # Verify the services are running
+          - curl http://localhost:8080 || exit 1
+          - curl http://localhost:5173 || exit 1
+
+          # Optional: Push images to Docker Hub
+          - docker tag merchant-feedback-backend revanth009/merchant-feedback-backend:latest
+          - docker tag merchant-feedback-frontend revanth009/merchant-feedback-frontend:latest
+          - docker push revanth009/merchant-feedback-backend:latest
+          - docker push revanth009/merchant-feedback-frontend:latest
+services:
+  docker:
+    memory: 4096
